@@ -28,9 +28,16 @@ public class MyExternalSignatureContainer implements IExternalSignatureContainer
     private byte[] signatureBytes;
     private X509Certificate certificate;
 
-    public MyExternalSignatureContainer(String signaturePath, String certificatePath) throws Exception {
+    private String url;
+
+    private String bearerToken;
+
+    public MyExternalSignatureContainer(String signaturePath, String certificatePath, String url, String bearerToken) throws Exception {
         // Carrega a assinatura PKCS#7 (.p7s) como um array de bytes
         this.signatureBytes = Files.readAllBytes(new File(signaturePath).toPath());
+
+        this.setUrl(url); //setar url da api
+        this.setBearerToken(bearerToken); //setar o token
 
         // Carrega o certificado X.509 a partir do caminho fornecido
         CertificateFactory factory = CertificateFactory.getInstance("X.509");
@@ -58,9 +65,9 @@ public class MyExternalSignatureContainer implements IExternalSignatureContainer
         // Prepare a chamada da API
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("https://assinatura-api.staging.iti.br/externo/v2/assinarPKCS7"))
+                .uri(URI.create(this.getUrl()))
                 .header("Content-Type", "application/json")
-                .header("Authorization", "Bearer AT-6847-PwKPEF24Tg4ej2Pd8iZwaj-ZUESkBF79")
+                .header("Authorization", "Bearer " + this.getBearerToken())
                 .POST(BodyPublishers.ofString("{\"hashBase64\":\"" + hashBase64 + "\"}"))
                 .build();
 
@@ -93,5 +100,21 @@ public class MyExternalSignatureContainer implements IExternalSignatureContainer
     public X509Certificate getCertificate() {
         // Fornece acesso ao certificado carregado
         return this.certificate;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public String getBearerToken() {
+        return bearerToken;
+    }
+
+    public void setBearerToken(String bearerToken) {
+        this.bearerToken = bearerToken;
     }
 }
