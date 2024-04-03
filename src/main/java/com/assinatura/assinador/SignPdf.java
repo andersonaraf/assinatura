@@ -10,26 +10,27 @@ import java.nio.file.Path;
 import java.nio.file.Files;
 import java.util.Base64;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 public class SignPdf {
     private String url;
     private String bearerToken;
 
-    public static String gerar(String srcPdfBase64, String signatureBase64, String certificateBase64, String url, String bearerToken) throws Exception {
+    public static String gerar(String srcPdfBase64, String certificateBase64, String url, String bearerToken, String nomeAssinante) throws Exception {
         Path srcPdfTempPath = Files.createTempFile(null, ".pdf");
         Path signatureTempPath = Files.createTempFile(null, ".p7s");
         Path certificateTempPath = Files.createTempFile(null, ".cer"); // Para o certificado
 
         byte[] srcPdfBytes = Base64.getDecoder().decode(srcPdfBase64);
-        byte[] signatureBytes = Base64.getDecoder().decode(signatureBase64);
         byte[] certificateBytes = Base64.getDecoder().decode(certificateBase64);
 
         Files.write(srcPdfTempPath, srcPdfBytes);
-        Files.write(signatureTempPath, signatureBytes);
         Files.write(certificateTempPath, certificateBytes);
 
         String destPdfPath = srcPdfTempPath.toString().replace(".pdf", "-signed.pdf");
 
-        signPdf(srcPdfTempPath.toString(), destPdfPath, signatureTempPath.toString(), certificateTempPath.toString(), url, bearerToken);
+        signPdf(srcPdfTempPath.toString(), destPdfPath, certificateTempPath.toString(), url, bearerToken, nomeAssinante);
 
         // Após a assinatura, você pode optar por codificar o PDF assinado de volta para Base64,
         // retornar o caminho do arquivo, ou até mesmo o arquivo diretamente, dependendo do seu requisito
@@ -37,20 +38,27 @@ public class SignPdf {
         return destPdfPath; // Retorna o caminho do PDF assinado
     }
 
-    private static void signPdf(String srcPdfPath, String destPdfPath, String signaturePath, String certificatePath, String url, String bearerToken) throws Exception {
+    private static void signPdf(String srcPdfPath, String destPdfPath, String certificatePath, String url, String bearerToken, String nomeAssinante) throws Exception {
         PdfReader reader = new PdfReader(srcPdfPath);
         try (FileOutputStream os = new FileOutputStream(destPdfPath)) {
             PdfSigner signer = new PdfSigner(reader, os, new StampingProperties().useAppendMode());
 
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+            String dataHoraBrasil = sdf.format(new Date());
+
+            // Define as informações para a aparência da assinatura
+            String reason = "Assinado por: " + nomeAssinante;
+            String location = "Assinado em: " + dataHoraBrasil;
+
             PdfSignatureAppearance appearance = signer.getSignatureAppearance()
-                    .setReason("Anderson Araújo Ferreira")
-                    .setLocation("Local")
+                    .setReason(reason)
+                    .setLocation(location)
                     .setReuseAppearance(false)
-                    .setPageRect(new Rectangle(100, 100, 200, 100))
+                    .setPageRect(new Rectangle(280, 65, 80, 80))
                     .setPageNumber(1);
             appearance.setRenderingMode(PdfSignatureAppearance.RenderingMode.DESCRIPTION);
 
-            MyExternalSignatureContainer externalSignatureContainer = new MyExternalSignatureContainer(signaturePath, certificatePath, url, bearerToken);
+            MyExternalSignatureContainer externalSignatureContainer = new MyExternalSignatureContainer(certificatePath, url, bearerToken);
             signer.signExternalContainer(externalSignatureContainer, 8192);
         }
     }

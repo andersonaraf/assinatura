@@ -32,9 +32,9 @@ public class MyExternalSignatureContainer implements IExternalSignatureContainer
 
     private String bearerToken;
 
-    public MyExternalSignatureContainer(String signaturePath, String certificatePath, String url, String bearerToken) throws Exception {
+    public MyExternalSignatureContainer(String certificatePath, String url, String bearerToken) throws Exception {
         // Carrega a assinatura PKCS#7 (.p7s) como um array de bytes
-        this.signatureBytes = Files.readAllBytes(new File(signaturePath).toPath());
+//        this.signatureBytes = Files.readAllBytes(new File(signaturePath).toPath());
 
         this.setUrl(url); //setar url da api
         this.setBearerToken(bearerToken); //setar o token

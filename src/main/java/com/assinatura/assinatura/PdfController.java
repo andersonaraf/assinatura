@@ -17,7 +17,8 @@ public class PdfController {
 
     @PostMapping("/download-signed-pdf")
     public ResponseEntity<Resource> downloadSignedPdf(@RequestBody PdfRequest request) throws Exception {
-        String pdfPath = SignPdf.gerar(request.getSrcPdfBase64(), request.getSignatureBase64(), request.getCertificateBase64(), request.getUrl(), request.getBearerToken());
+        System.out.println("Nome: " + request.getNomeAssinante());
+        String pdfPath = SignPdf.gerar(request.getSrcPdfBase64(),  request.getCertificateBase64(), request.getUrl(), request.getBearerToken(), request.getNomeAssinante());
 
         Resource file = new PathResource(pdfPath);
         return ResponseEntity.ok()
@@ -28,10 +29,11 @@ public class PdfController {
     // Classe interna para mapear o corpo da requisição JSON
     public static class PdfRequest {
         private String srcPdfBase64;
-        private String signatureBase64;
         private String certificateBase64; // Novo campo para o certificado
         private String url;
         private String bearerToken;
+
+        private String nomeAssinante;
 
         // Getters e setters
         public String getSrcPdfBase64() {
@@ -40,14 +42,6 @@ public class PdfController {
 
         public void setSrcPdfBase64(String srcPdfBase64) {
             this.srcPdfBase64 = srcPdfBase64;
-        }
-
-        public String getSignatureBase64() {
-            return signatureBase64;
-        }
-
-        public void setSignatureBase64(String signatureBase64) {
-            this.signatureBase64 = signatureBase64;
         }
 
         public String getCertificateBase64() {
@@ -72,6 +66,14 @@ public class PdfController {
 
         public void setBearerToken(String bearerToken) {
             this.bearerToken = bearerToken;
+        }
+
+        public String getNomeAssinante() {
+            return nomeAssinante;
+        }
+
+        public void setNomeAssinante(String nomeAssinante) {
+            this.nomeAssinante = nomeAssinante;
         }
     }
 }
