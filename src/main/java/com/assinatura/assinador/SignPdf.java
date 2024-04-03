@@ -6,56 +6,50 @@ import com.itextpdf.signatures.PdfSignatureAppearance;
 import com.itextpdf.signatures.PdfSigner;
 
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Files;
 import java.util.Base64;
 
 public class SignPdf {
-    public static void signPdf(String srcPdfPath, String destPdfPath, String signaturePath) {
-        try {
-            PdfReader reader = new PdfReader(srcPdfPath);
-            PdfSigner signer = new PdfSigner(reader, new FileOutputStream(destPdfPath), new StampingProperties().useAppendMode());
 
-            PdfSignatureAppearance appearance = signer.getSignatureAppearance()
-                    .setPageRect(new Rectangle(280, 65, 80, 80))
-                    .setPageNumber(1);
-            appearance.setRenderingMode(PdfSignatureAppearance.RenderingMode.DESCRIPTION);
-
-            MyExternalSignatureContainer externalSignatureContainer = new MyExternalSignatureContainer(signaturePath);
-
-            // Adiciona a assinatura ao documento
-            signer.signExternalContainer(externalSignatureContainer, 8192);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static String gerar(String srcPdfBase64, String signatureBase64) throws IOException {
-        // Decodifica o PDF de origem e a assinatura do Base64 e os salva como arquivos temporários
+    public static String gerar(String srcPdfBase64, String signatureBase64, String certificateBase64) throws Exception {
         Path srcPdfTempPath = Files.createTempFile(null, ".pdf");
         Path signatureTempPath = Files.createTempFile(null, ".p7s");
+        Path certificateTempPath = Files.createTempFile(null, ".cer"); // Para o certificado
 
         byte[] srcPdfBytes = Base64.getDecoder().decode(srcPdfBase64);
         byte[] signatureBytes = Base64.getDecoder().decode(signatureBase64);
+        byte[] certificateBytes = Base64.getDecoder().decode(certificateBase64);
 
         Files.write(srcPdfTempPath, srcPdfBytes);
         Files.write(signatureTempPath, signatureBytes);
+        Files.write(certificateTempPath, certificateBytes);
 
-        // Gera um nome de arquivo aleatório para o PDF de destino
-        Path destPdfTempPath = Files.createTempFile(null, ".pdf");
+        String destPdfPath = srcPdfTempPath.toString().replace(".pdf", "-signed.pdf");
 
-        // Chama signPdf com os caminhos dos arquivos
-        signPdf(srcPdfTempPath.toString(), destPdfTempPath.toString(), signatureTempPath.toString());
+        signPdf(srcPdfTempPath.toString(), destPdfPath, signatureTempPath.toString(), certificateTempPath.toString());
 
-        // Codifica o PDF assinado de volta para Base64 para retornar
-        byte[] destPdfBytes = Files.readAllBytes(destPdfTempPath);
-        String destPdfBase64 = Base64.getEncoder().encodeToString(destPdfBytes);
+        // Após a assinatura, você pode optar por codificar o PDF assinado de volta para Base64,
+        // retornar o caminho do arquivo, ou até mesmo o arquivo diretamente, dependendo do seu requisito
+        System.out.printf(destPdfPath);
+        return destPdfPath; // Retorna o caminho do PDF assinado
+    }
 
-//        // Limpa os arquivos temporários
-        Files.delete(srcPdfTempPath);
-        Files.delete(signatureTempPath);
+    private static void signPdf(String srcPdfPath, String destPdfPath, String signaturePath, String certificatePath) throws Exception {
+        PdfReader reader = new PdfReader(srcPdfPath);
+        try (FileOutputStream os = new FileOutputStream(destPdfPath)) {
+            PdfSigner signer = new PdfSigner(reader, os, new StampingProperties().useAppendMode());
 
-        return destPdfTempPath.toString();
+            PdfSignatureAppearance appearance = signer.getSignatureAppearance()
+                    .setReason("Anderson Araújo Ferreira")
+                    .setLocation("Local")
+                    .setReuseAppearance(false)
+                    .setPageRect(new Rectangle(100, 100, 200, 100))
+                    .setPageNumber(1);
+            appearance.setRenderingMode(PdfSignatureAppearance.RenderingMode.DESCRIPTION);
+
+            MyExternalSignatureContainer externalSignatureContainer = new MyExternalSignatureContainer(signaturePath, certificatePath);
+            signer.signExternalContainer(externalSignatureContainer, 8192);
+        }
     }
 }

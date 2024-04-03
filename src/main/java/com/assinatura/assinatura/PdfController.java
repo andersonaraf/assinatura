@@ -16,8 +16,8 @@ import java.nio.file.Path;
 public class PdfController {
 
     @PostMapping("/download-signed-pdf")
-    public ResponseEntity<Resource> downloadSignedPdf(@RequestBody PdfRequest request) throws IOException {
-        String pdfPath = SignPdf.gerar(request.getSrcPdfBase64(), request.getSignatureBase64());
+    public ResponseEntity<Resource> downloadSignedPdf(@RequestBody PdfRequest request) throws Exception {
+        String pdfPath = SignPdf.gerar(request.getSrcPdfBase64(), request.getSignatureBase64(), request.getCertificateBase64());
 
         Resource file = new PathResource(pdfPath);
         return ResponseEntity.ok()
@@ -29,6 +29,7 @@ public class PdfController {
     public static class PdfRequest {
         private String srcPdfBase64;
         private String signatureBase64;
+        private String certificateBase64; // Novo campo para o certificado
 
         // Getters e setters
         public String getSrcPdfBase64() { return srcPdfBase64; }
@@ -36,5 +37,9 @@ public class PdfController {
 
         public String getSignatureBase64() { return signatureBase64; }
         public void setSignatureBase64(String signatureBase64) { this.signatureBase64 = signatureBase64; }
+
+        public String getCertificateBase64() { return certificateBase64; } // Getter para o certificado
+        public void setCertificateBase64(String certificateBase64) { this.certificateBase64 = certificateBase64; } // Setter para o certificado
+
     }
 }
