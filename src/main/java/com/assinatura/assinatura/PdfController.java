@@ -17,7 +17,7 @@ public class PdfController {
 
     @PostMapping("/download-signed-pdf")
     public ResponseEntity<Resource> downloadSignedPdf(@RequestBody PdfRequest request) throws Exception {
-        System.out.println("Nome: " + request.getNomeAssinante());
+//        System.out.println("Nome: " + request.getNomeAssinante());
         String pdfPath = SignPdf.gerar(request.getSrcPdfBase64(),  request.getCertificateBase64(), request.getUrl(), request.getBearerToken(), request.getNomeAssinante());
 
         Resource file = new PathResource(pdfPath);

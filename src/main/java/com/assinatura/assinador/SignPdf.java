@@ -34,7 +34,7 @@ public class SignPdf {
 
         // Após a assinatura, você pode optar por codificar o PDF assinado de volta para Base64,
         // retornar o caminho do arquivo, ou até mesmo o arquivo diretamente, dependendo do seu requisito
-        System.out.printf(destPdfPath);
+//        System.out.printf(destPdfPath);
         return destPdfPath; // Retorna o caminho do PDF assinado
     }
 
@@ -46,17 +46,17 @@ public class SignPdf {
             SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
             String dataHoraBrasil = sdf.format(new Date());
 
-            // Define as informações para a aparência da assinatura
-            String reason = "Assinado por: " + nomeAssinante;
-            String location = "Assinado em: " + dataHoraBrasil;
+            // Personalizar o texto da camada 2 da aparência da assinatura
+            String textoPersonalizado = "Assinado digitalmente por\n" +
+                    nomeAssinante + "\n" +
+                    "Data: " + dataHoraBrasil + "\n";
 
             PdfSignatureAppearance appearance = signer.getSignatureAppearance()
-                    .setReason(reason)
-                    .setLocation(location)
                     .setReuseAppearance(false)
-                    .setPageRect(new Rectangle(280, 65, 80, 80))
-                    .setPageNumber(1);
-            appearance.setRenderingMode(PdfSignatureAppearance.RenderingMode.DESCRIPTION);
+                    .setPageRect(new Rectangle(280, 65, 160, 80))
+                    .setPageNumber(1)
+                    .setLayer2Text(textoPersonalizado)  // Adicionando o texto personalizado
+                    .setRenderingMode(PdfSignatureAppearance.RenderingMode.DESCRIPTION);
 
             MyExternalSignatureContainer externalSignatureContainer = new MyExternalSignatureContainer(certificatePath, url, bearerToken);
             signer.signExternalContainer(externalSignatureContainer, 8192);
