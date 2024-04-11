@@ -17,8 +17,9 @@ public class PdfController {
 
     @PostMapping("/download-signed-pdf")
     public ResponseEntity<Resource> downloadSignedPdf(@RequestBody PdfRequest request) throws Exception {
-//        System.out.println("Nome: " + request.getNomeAssinante());
-        String pdfPath = SignPdf.gerar(request.getSrcPdfBase64(),  request.getCertificateBase64(), request.getUrl(), request.getBearerToken(), request.getNomeAssinante());
+        String pdfPath = SignPdf.gerar(request.getSrcPdfBase64(),  request.getCertificateBase64(), request.getUrl(),
+                request.getBearerToken(), request.getNomeAssinante(), request.getX(), request.getY(), request.getWidth(),
+                request.getHeight(), request.fontSize);
 
         Resource file = new PathResource(pdfPath);
         return ResponseEntity.ok()
@@ -32,9 +33,12 @@ public class PdfController {
         private String certificateBase64; // Novo campo para o certificado
         private String url;
         private String bearerToken;
-
         private String nomeAssinante;
+        private Integer x, y; //POSICAÇÃO ONDE VAI FICAR A ASSINATUA
 
+        private Integer width, height; //TAMANHO DA ASSITURA
+
+        private Integer fontSize; //TAMANHO DA FONT DA ASSINATURA
         // Getters e setters
         public String getSrcPdfBase64() {
             return srcPdfBase64;
@@ -74,6 +78,46 @@ public class PdfController {
 
         public void setNomeAssinante(String nomeAssinante) {
             this.nomeAssinante = nomeAssinante;
+        }
+
+        public Integer getX() {
+            return x;
+        }
+
+        public void setX(Integer x) {
+            this.x = x;
+        }
+
+        public Integer getY() {
+            return y;
+        }
+
+        public void setY(Integer y) {
+            this.y = y;
+        }
+
+        public Integer getWidth() {
+            return width;
+        }
+
+        public void setWidth(Integer width) {
+            this.width = width;
+        }
+
+        public Integer getHeight() {
+            return height;
+        }
+
+        public void setHeight(Integer height) {
+            this.height = height;
+        }
+
+        public Integer getFontSize() {
+            return fontSize;
+        }
+
+        public void setFontSize(Integer fontSize) {
+            this.fontSize = fontSize;
         }
     }
 }

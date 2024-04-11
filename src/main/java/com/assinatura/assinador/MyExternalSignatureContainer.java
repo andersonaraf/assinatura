@@ -4,18 +4,19 @@ import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfName;
 import com.itextpdf.signatures.DigestAlgorithms;
 import com.itextpdf.signatures.IExternalSignatureContainer;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
-import java.io.File;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
+
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
-
+import java.security.Security;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -33,8 +34,8 @@ public class MyExternalSignatureContainer implements IExternalSignatureContainer
     private String bearerToken;
 
     public MyExternalSignatureContainer(String certificatePath, String url, String bearerToken) throws Exception {
-        // Carrega a assinatura PKCS#7 (.p7s) como um array de bytes
-//        this.signatureBytes = Files.readAllBytes(new File(signaturePath).toPath());
+        BouncyCastleProvider providerBC = new BouncyCastleProvider();
+        Security.addProvider(providerBC);
 
         this.setUrl(url); //setar url da api
         this.setBearerToken(bearerToken); //setar o token
