@@ -1,4 +1,6 @@
 package com.assinatura.assinador;
+
+import com.assinatura.dtos.PdfRequest;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.StampingProperties;
@@ -15,65 +17,58 @@ import java.util.Date;
 import java.util.TimeZone;
 
 public class SignPdf {
-    private String url;
-    private String bearerToken;
+    static MyExternalSignatureContainer externalSignatureContainer;
 
-    public static String gerar(String srcPdfBase64, String certificateBase64, String url, String bearerToken,
-                               String nomeAssinante, Integer x, Integer y, Integer width, Integer height, Integer fontSize) throws Exception {
+    public static String gerar(PdfRequest request) throws Exception {
         Path srcPdfTempPath = Files.createTempFile(null, ".pdf");
-        Path signatureTempPath = Files.createTempFile(null, ".p7s");
-        Path certificateTempPath = Files.createTempFile(null, ".cer"); // Para o certificado
+        Path certificateTempPath = Files.createTempFile(null, ".cer");
 
-        //setar as posições das para construir assinatura
+        try {
+            Files.write(srcPdfTempPath, Base64.getDecoder().decode(request.getSrcPdfBase64()));
+            Files.write(certificateTempPath, Base64.getDecoder().decode(request.getCertificateBase64()));
 
-        byte[] srcPdfBytes = Base64.getDecoder().decode(srcPdfBase64);
-        byte[] certificateBytes = Base64.getDecoder().decode(certificateBase64);
+            String destPdfPath = srcPdfTempPath.toString().replace(".pdf", "-signed.pdf");
 
-        Files.write(srcPdfTempPath, srcPdfBytes);
-        Files.write(certificateTempPath, certificateBytes);
+            externalSignatureContainer = new MyExternalSignatureContainer(certificateTempPath.toString(), request.getUrl(), request.getBearerToken());
 
-        String destPdfPath = srcPdfTempPath.toString().replace(".pdf", "-signed.pdf");
+            signPdf(srcPdfTempPath.toString(), destPdfPath, certificateTempPath.toString(), request);
 
-        signPdf(srcPdfTempPath.toString(), destPdfPath, certificateTempPath.toString(), url,
-                bearerToken, nomeAssinante, x, y, width, height, fontSize);
-
-        // Após a assinatura, você pode optar por codificar o PDF assinado de volta para Base64,
-        // retornar o caminho do arquivo, ou até mesmo o arquivo diretamente, dependendo do seu requisito
-//        System.out.printf(destPdfPath);
-        return destPdfPath; // Retorna o caminho do PDF assinado
+            return destPdfPath;
+        } finally {
+            Files.deleteIfExists(srcPdfTempPath);
+            Files.deleteIfExists(certificateTempPath);
+        }
     }
 
-    private static void signPdf(String srcPdfPath, String destPdfPath, String certificatePath,
-                                String url, String bearerToken, String nomeAssinante,
-                                Integer x, Integer y, Integer width, Integer height, Integer fontSize) throws Exception {
+    private static void signPdf(String srcPdfPath, String destPdfPath, String certificatePath, PdfRequest request) throws Exception {
         PdfReader reader = new PdfReader(srcPdfPath);
         try (FileOutputStream os = new FileOutputStream(destPdfPath)) {
             PdfSigner signer = new PdfSigner(reader, os, new StampingProperties().useAppendMode());
-
+            // Obter CN do certificado
+            String signerName = externalSignatureContainer.getCertificateCommonName();
 
             SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
             sdf.setTimeZone(TimeZone.getTimeZone("America/Rio_Branco"));
-            String dataHoraBrasil = sdf.format(new Date());
+            String dateTime = sdf.format(new Date());
 
-            // Obtendo o offset do fuso horário de Rio Branco em relação ao UTC
             TimeZone tz = TimeZone.getTimeZone("America/Rio_Branco");
-            int offset = tz.getOffset(new Date().getTime()) / 3600000; // Converte de milissegundos para horas
+            int offset = tz.getOffset(new Date().getTime()) / 3600000;
 
-            // Personalizar o texto da camada 2 da aparência da assinatura
-            String textoPersonalizado = "Assinado digitalmente por\n" +
-                    nomeAssinante + "\n" +
-                    "Data: " + dataHoraBrasil + " UTC" + offset + "\n";
+            String customText = String.format("Assinado digitalmente por\n%s\nData: %s UTC%s\n",
+                    signerName, dateTime, offset);
 
+            Rectangle rect = new Rectangle(request.getX(), request.getY(), request.getWidth(), request.getHeight());
 
             PdfSignatureAppearance appearance = signer.getSignatureAppearance()
                     .setReuseAppearance(false)
-                    .setPageRect(new Rectangle(x, y, width, height))
-                    .setLayer2FontSize(fontSize)
+                    .setPageRect(rect)
+                    .setLayer2FontSize(request.getFontSize().floatValue())
                     .setPageNumber(1)
-                    .setLayer2Text(textoPersonalizado)  // Adicionando o texto personalizado
+                    .setLayer2Text(customText)
                     .setRenderingMode(PdfSignatureAppearance.RenderingMode.DESCRIPTION);
 
-            MyExternalSignatureContainer externalSignatureContainer = new MyExternalSignatureContainer(certificatePath, url, bearerToken);
+            MyExternalSignatureContainer externalSignatureContainer = new MyExternalSignatureContainer(certificatePath, request.getUrl(), request.getBearerToken());
+
             signer.signExternalContainer(externalSignatureContainer, 8192);
         }
     }

@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import java.security.Security;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"com.assinatura"})
 public class AssinaturaApplication {
 
 	public static void main(String[] args) {

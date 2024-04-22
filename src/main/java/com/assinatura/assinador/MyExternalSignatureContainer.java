@@ -1,5 +1,6 @@
 package com.assinatura.assinador;
 
+import com.assinatura.util.CertificateUtils;
 import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfName;
 import com.itextpdf.signatures.DigestAlgorithms;
@@ -53,8 +54,11 @@ public class MyExternalSignatureContainer implements IExternalSignatureContainer
             MessageDigest messageDigest = DigestAlgorithms.getMessageDigest("SHA256", "BC");
             byte[] hash = DigestAlgorithms.digest(data, messageDigest);
             byte[] p7sSignature = signPKCS7API(hash);
+
+            this.certificate = CertificateUtils.extractCertificateFromP7s(p7sSignature);
+
             return p7sSignature;
-        } catch (IOException | InterruptedException e) {
+        } catch (Exception e) {
             throw new GeneralSecurityException("Falha ao assinar o PDF", e);
         }
     }
@@ -117,5 +121,10 @@ public class MyExternalSignatureContainer implements IExternalSignatureContainer
 
     public void setBearerToken(String bearerToken) {
         this.bearerToken = bearerToken;
+    }
+
+    public String getCertificateCommonName() {
+        // Lógica para extrair o CN do certificado armazenado
+        return CertificateUtils.extractCNFromCertificate(this.certificate);
     }
 }
